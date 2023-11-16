@@ -62,7 +62,7 @@ func getWordsCount(filename string) (int64, error) {
 	return int64(wordCount), nil
 }
 
-func getCharCounter(filename string) (int64, error) {
+func getCharCount(filename string) (int64, error) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -100,7 +100,7 @@ func main() {
 				fmt.Println(err)
 			}
 		case "-m":
-			if wordCount, err := getCharCounter(filename); err == nil {
+			if wordCount, err := getCharCount(filename); err == nil {
 				fmt.Println(wordCount, filename)
 			} else {
 				fmt.Println(err)
