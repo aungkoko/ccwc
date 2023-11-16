@@ -1,133 +1,94 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"strconv"
 	"strings"
 )
 
-func getBytesCount(filename string) (int64, error) {
-	bytes, err := os.ReadFile(filename)
-	var byteCount int64
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return byteCount, err
-	}
-
-	byteCount = int64(len(bytes))
-	return byteCount, nil
+type Result struct {
+	ByteCount int64
+	CharCount int64
+	LineCount int64
+	WordCount int64
 }
 
-func getCharCount(filename string) (int64, error) {
-	content, err := os.ReadFile(filename)
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return 0, err
-	}
+func (r *Result) SetResult(content []byte) {
+	r.ByteCount = int64(len(content))
 
 	content_str := string(content)
+	r.LineCount = int64(strings.Count(content_str, "\n"))
 
-	return int64(len([]rune(content_str))), nil
-}
+	r.CharCount = int64(len([]rune(content_str)))
 
-func getLinesCount(filename string) (int64, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	sc := bufio.NewScanner(file)
-	lineCount := 0
-
-	for sc.Scan() {
-		lineCount++
-	}
-
-	if err := sc.Err(); err != nil {
-		return 0, err
-	}
-
-	return int64(lineCount), nil
-}
-
-func getWordsCount(filename string) (int64, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	sc := bufio.NewScanner(file)
-	wordCount := 0
-
-	for sc.Scan() {
-		words := strings.Fields(sc.Text())
-		wordCount += len(words)
-	}
-
-	if err := sc.Err(); err != nil {
-		return 0, err
-	}
-
-	return int64(wordCount), nil
+	r.WordCount = int64((len(bytes.Fields(content))))
 }
 
 func main() {
+	var bytes []byte
+	var filename string
+	var err error
 	args := os.Args
 
-	var filename string
-	var result []string
+	defaultPrinter := map[string]bool{"-c": false, "-l": false, "-w": false, "-m": false}
 
-	if len(args) > 2 {
-		flag := args[1]
+	if len(args) == 3 {
 		filename = args[2]
-
-		switch flag {
-		case "-c":
-			if byteCount, err := getBytesCount(filename); err == nil {
-				result = append(result, strconv.FormatInt(byteCount, 10))
-			} else {
-				fmt.Println(err)
-			}
-		case "-l":
-			if lineCount, err := getLinesCount(filename); err == nil {
-				result = append(result, strconv.FormatInt(lineCount, 10))
-			} else {
-				fmt.Println(err)
-			}
-		case "-w":
-			if wordCount, err := getWordsCount(filename); err == nil {
-				result = append(result, strconv.FormatInt(wordCount, 10))
-			} else {
-				fmt.Println(err)
-			}
-		case "-m":
-			if charCount, err := getCharCount(filename); err == nil {
-				result = append(result, strconv.FormatInt(charCount, 10))
-			} else {
-				fmt.Println(err)
-			}
+		bytes, err = os.ReadFile(filename)
+		if err != nil {
+			log.Fatal(err.Error())
 		}
+		defaultPrinter[args[1]] = true
 	}
 
 	if len(args) == 2 {
-		filename = args[1]
-		byteCount, _ := getBytesCount(filename)
-		result = append(result, strconv.FormatInt(byteCount, 10))
-
-		lineCount, _ := getLinesCount(filename)
-		result = append(result, strconv.FormatInt(lineCount, 10))
-
-		wordCount, _ := getWordsCount(filename)
-		result = append(result, strconv.FormatInt(wordCount, 10))
-	} else {
-
+		first_arg := args[1]
+		if first_arg == "-c" || first_arg == "-l" || first_arg == "-w" || first_arg == "-m" {
+			defaultPrinter[args[1]] = true
+			bytes, err = io.ReadAll(os.Stdin)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+		} else {
+			filename = first_arg
+			bytes, err = os.ReadFile(filename)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			defaultPrinter["-c"] = true
+			defaultPrinter["-l"] = true
+			defaultPrinter["-w"] = true
+		}
 	}
 
-	result = append(result, filename)
+	r := Result{}
+	r.SetResult(bytes)
 
-	fmt.Println(strings.Join(result, " "))
+	if defaultPrinter["-l"] {
+		fmt.Printf("%s ", strconv.Itoa(int(r.LineCount)))
+	}
+
+	if defaultPrinter["-w"] {
+		fmt.Printf("%s ", strconv.Itoa(int(r.WordCount)))
+	}
+
+	if defaultPrinter["-c"] {
+		fmt.Printf("%s ", strconv.Itoa(int(r.ByteCount)))
+	}
+
+	if defaultPrinter["-m"] {
+		fmt.Printf("%s ", strconv.Itoa(int(r.CharCount)))
+	}
+
+	if filename == "" {
+		fmt.Printf("\n")
+	}
+
+	if filename != "" {
+		fmt.Printf("%s \n", filename)
+	}
 }
