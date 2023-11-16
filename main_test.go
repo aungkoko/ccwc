@@ -1,37 +1,21 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"reflect"
+	"testing"
+)
 
 const filename = "test.txt"
 
-type Case struct {
-	want int64
-	fn   func(string) (int64, error)
-}
-
 func TestGetBytesCount(t *testing.T) {
-	cases := []Case{
-		{
-			want: 342190,
-			fn:   getBytesCount,
-		},
-		{
-			want: 7145,
-			fn:   getLinesCount,
-		},
-		{
-			want: 58164,
-			fn:   getWordsCount,
-		},
-		{
-			want: 33929,
-			fn:   getCharCount,
-		},
-	}
+	bytes, _ := os.ReadFile(filename)
+	r := Result{}
+	r.SetResult(bytes)
 
-	for _, each_case := range cases {
-		if got, _ := each_case.fn(filename); got != each_case.want {
-			t.Errorf("want %v but got %v", each_case.want, got)
-		}
+	want := Result{ByteCount: 342190, CharCount: 339292, LineCount: 7145, WordCount: 58164}
+
+	if !reflect.DeepEqual(r, want) {
+		t.Errorf("want %v got %v", want, r)
 	}
 }
