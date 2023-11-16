@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -17,6 +18,18 @@ func getBytesCount(filename string) (int64, error) {
 
 	byteCount = int64(len(bytes))
 	return byteCount, nil
+}
+
+func getCharCount(filename string) (int64, error) {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return 0, err
+	}
+
+	content_str := string(content)
+
+	return int64(len([]rune(content_str))), nil
 }
 
 func getLinesCount(filename string) (int64, error) {
@@ -62,49 +75,59 @@ func getWordsCount(filename string) (int64, error) {
 	return int64(wordCount), nil
 }
 
-func getCharCount(filename string) (int64, error) {
-	content, err := os.ReadFile(filename)
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return 0, err
-	}
-
-	content_str := string(content)
-
-	return int64(len([]rune(content_str))), nil
-}
-
 func main() {
 	args := os.Args
-	if len(args) > 1 {
-		option := args[1]
-		filename := args[2]
 
-		switch option {
+	var filename string
+	var result []string
+
+	if len(args) > 2 {
+		flag := args[1]
+		filename = args[2]
+
+		switch flag {
 		case "-c":
 			if byteCount, err := getBytesCount(filename); err == nil {
-				fmt.Println(byteCount, filename)
+				result = append(result, strconv.FormatInt(byteCount, 10))
 			} else {
 				fmt.Println(err)
 			}
 		case "-l":
 			if lineCount, err := getLinesCount(filename); err == nil {
-				fmt.Println(lineCount, filename)
+				result = append(result, strconv.FormatInt(lineCount, 10))
 			} else {
 				fmt.Println(err)
 			}
 		case "-w":
 			if wordCount, err := getWordsCount(filename); err == nil {
-				fmt.Println(wordCount, filename)
+				result = append(result, strconv.FormatInt(wordCount, 10))
 			} else {
 				fmt.Println(err)
 			}
 		case "-m":
-			if wordCount, err := getCharCount(filename); err == nil {
-				fmt.Println(wordCount, filename)
+			if charCount, err := getCharCount(filename); err == nil {
+				result = append(result, strconv.FormatInt(charCount, 10))
 			} else {
 				fmt.Println(err)
 			}
 		}
 	}
+
+	if len(args) == 2 {
+		filename = args[1]
+		byteCount, _ := getBytesCount(filename)
+		result = append(result, strconv.FormatInt(byteCount, 10))
+
+		lineCount, _ := getLinesCount(filename)
+		result = append(result, strconv.FormatInt(lineCount, 10))
+
+		wordCount, _ := getWordsCount(filename)
+		result = append(result, strconv.FormatInt(wordCount, 10))
+	} else {
+
+	}
+
+	result = append(result, filename)
+
+	fmt.Println(strings.Join(result, " "))
 }
